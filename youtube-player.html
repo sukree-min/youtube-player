@@ -1,0 +1,635 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>YouTube Playlist Player</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            min-height: 100vh;
+            color: #fff;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        h1 {
+            text-align: center;
+            margin-bottom: 20px;
+            color: #ff0000;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+        
+        .main-content {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 20px;
+        }
+        
+        @media (max-width: 768px) {
+            .main-content {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        .player-section {
+            background: #0f0f0f;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+        }
+        
+        .video-container {
+            position: relative;
+            padding-bottom: 56.25%;
+            height: 0;
+        }
+        
+        #youtube-player {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+        }
+        
+        .controls {
+            padding: 15px;
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            align-items: center;
+            background: #1a1a1a;
+        }
+        
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        
+        .btn-primary {
+            background: #ff0000;
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background: #cc0000;
+        }
+        
+        .btn-secondary {
+            background: #3d3d3d;
+            color: white;
+        }
+        
+        .btn-secondary:hover {
+            background: #4d4d4d;
+        }
+        
+        .btn-danger {
+            background: #dc3545;
+            color: white;
+        }
+        
+        .btn-danger:hover {
+            background: #c82333;
+        }
+        
+        .playlist-section {
+            background: #1a1a2e;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+        }
+        
+        .playlist-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        
+        .playlist-header h2 {
+            font-size: 18px;
+        }
+        
+        .playlist-count {
+            background: #ff0000;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 12px;
+        }
+        
+        .playlist {
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        
+        .playlist-item {
+            display: flex;
+            align-items: center;
+            padding: 10px;
+            margin-bottom: 8px;
+            background: #252545;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+            gap: 10px;
+        }
+        
+        .playlist-item:hover {
+            background: #353565;
+        }
+        
+        .playlist-item.active {
+            background: #ff0000;
+        }
+        
+        .playlist-item img {
+            width: 80px;
+            height: 60px;
+            border-radius: 4px;
+            object-fit: cover;
+        }
+        
+        .playlist-item-info {
+            flex: 1;
+            min-width: 0;
+        }
+        
+        .playlist-item-title {
+            font-size: 13px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        
+        .playlist-item-remove {
+            background: transparent;
+            border: none;
+            color: #ff6b6b;
+            cursor: pointer;
+            padding: 5px;
+            font-size: 16px;
+        }
+        
+        .playlist-item-remove:hover {
+            color: #ff0000;
+        }
+        
+        .empty-playlist {
+            text-align: center;
+            padding: 40px;
+            color: #888;
+        }
+        
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.8);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .modal.show {
+            display: flex;
+        }
+        
+        .modal-content {
+            background: #1a1a2e;
+            padding: 30px;
+            border-radius: 12px;
+            width: 90%;
+            max-width: 500px;
+        }
+        
+        .modal-header {
+            margin-bottom: 20px;
+        }
+        
+        .modal-header h2 {
+            color: #ff0000;
+        }
+        
+        .form-group {
+            margin-bottom: 15px;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-size: 14px;
+        }
+        
+        .form-group input, .form-group textarea {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #3d3d3d;
+            border-radius: 6px;
+            background: #0f0f0f;
+            color: white;
+            font-size: 14px;
+        }
+        
+        .form-group textarea {
+            min-height: 100px;
+            resize: vertical;
+        }
+        
+        .form-group input:focus, .form-group textarea:focus {
+            outline: none;
+            border-color: #ff0000;
+        }
+        
+        .modal-buttons {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+            margin-top: 20px;
+        }
+        
+        .status-bar {
+            text-align: center;
+            padding: 10px;
+            background: #252545;
+            border-radius: 0 0 12px 12px;
+            font-size: 13px;
+            color: #aaa;
+        }
+        
+        .status-bar.playing {
+            background: #1e4620;
+            color: #4caf50;
+        }
+        
+        .loop-control {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-left: auto;
+        }
+        
+        .loop-control input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            accent-color: #ff0000;
+        }
+        
+        .loop-control label {
+            font-size: 13px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎬 YouTube Playlist Player</h1>
+        
+        <div class="main-content">
+            <div class="player-section">
+                <div class="video-container">
+                    <div id="youtube-player"></div>
+                </div>
+                <div class="controls">
+                    <button class="btn btn-secondary" onclick="playPrevious()">
+                        ⏮️ ก่อนหน้า
+                    </button>
+                    <button class="btn btn-secondary" onclick="togglePlay()">
+                        <span id="play-btn-text">⏸️ หยุด</span>
+                    </button>
+                    <button class="btn btn-secondary" onclick="playNext()">
+                        ถัดไป ⏭️
+                    </button>
+                    <button class="btn btn-primary" onclick="openSettings()">
+                        ⚙️ ตั้งค่าลิงก์
+                    </button>
+                    <div class="loop-control">
+                        <input type="checkbox" id="loop-playlist" onchange="toggleLoop()">
+                        <label for="loop-playlist">🔁 เล่นวน</label>
+                    </div>
+                </div>
+                <div class="status-bar" id="status-bar">
+                    กำลังโหลด...
+                </div>
+            </div>
+            
+            <div class="playlist-section">
+                <div class="playlist-header">
+                    <h2>📋 รายการเพลย์ลิสต์</h2>
+                    <span class="playlist-count" id="playlist-count">0</span>
+                </div>
+                <div class="playlist" id="playlist">
+                    <div class="empty-playlist">
+                        ยังไม่มีวิดีโอในเพลย์ลิสต์<br>
+                        คลิก "ตั้งค่าลิงก์" เพื่อเพิ่ม
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Modal ตั้งค่า -->
+    <div class="modal" id="settings-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>⚙️ ตั้งค่าลิงก์ YouTube</h2>
+            </div>
+            
+            <div class="form-group">
+                <label>เพิ่มลิงก์ YouTube (หนึ่งบรรทัดต่อหนึ่งลิงก์):</label>
+                <textarea id="video-links" placeholder="https://www.youtube.com/watch?v=XXXXX&#10;https://youtu.be/XXXXX"></textarea>
+            </div>
+            
+            <div class="form-group">
+                <label>ตัวอย่างลิงก์ที่รองรับ:</label>
+                <div style="font-size: 12px; color: #888; line-height: 1.6;">
+                    • https://www.youtube.com/watch?v=VIDEO_ID<br>
+                    • https://youtu.be/VIDEO_ID<br>
+                    • https://www.youtube.com/embed/VIDEO_ID
+                </div>
+            </div>
+            
+            <div class="modal-buttons">
+                <button class="btn btn-secondary" onclick="closeSettings()">ยกเลิก</button>
+                <button class="btn btn-danger" onclick="clearAll()">ล้างทั้งหมด</button>
+                <button class="btn btn-primary" onclick="saveLinks()">บันทึก</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let player;
+        let playlist = [];
+        let currentIndex = 0;
+        let isLooping = false;
+        let isPlaying = true;
+
+        // โหลด YouTube IFrame API
+        const tag = document.createElement('script');
+        tag.src = "https://www.youtube.com/iframe_api";
+        const firstScriptTag = document.getElementsByTagName('script')[0];
+        firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
+
+        function onYouTubeIframeAPIReady() {
+            player = new YT.Player('youtube-player', {
+                height: '100%',
+                width: '100%',
+                videoId: '',
+                playerVars: {
+                    'playsinline': 1,
+                    'rel': 0,
+                    'modestbranding': 1
+                },
+                events: {
+                    'onReady': onPlayerReady,
+                    'onStateChange': onPlayerStateChange
+                }
+            });
+        }
+
+        function onPlayerReady(event) {
+            updateStatus('พร้อมเล่น - กรุณาเพิ่มลิงก์วิดีโอ');
+            loadPlaylistFromStorage();
+        }
+
+        function onPlayerStateChange(event) {
+            if (event.data === YT.PlayerState.PLAYING) {
+                isPlaying = true;
+                document.getElementById('play-btn-text').textContent = '⏸️ หยุด';
+                updateStatus('กำลังเล่น: ' + (playlist[currentIndex]?.title || 'วิดีโอ'), true);
+            } else if (event.data === YT.PlayerState.PAUSED) {
+                isPlaying = false;
+                document.getElementById('play-btn-text').textContent = '▶️ เล่น';
+                updateStatus('หยุดชั่วคราว');
+            } else if (event.data === YT.PlayerState.ENDED) {
+                playNext();
+            }
+        }
+
+        function togglePlay() {
+            if (isPlaying) {
+                player.pauseVideo();
+            } else {
+                player.playVideo();
+            }
+        }
+
+        function playNext() {
+            if (playlist.length === 0) return;
+            
+            currentIndex++;
+            if (currentIndex >= playlist.length) {
+                if (isLooping) {
+                    currentIndex = 0;
+                } else {
+                    currentIndex = playlist.length - 1;
+                    updateStatus('เล่นจบเพลย์ลิสต์แล้ว');
+                    return;
+                }
+            }
+            
+            playVideoAt(currentIndex);
+        }
+
+        function playPrevious() {
+            if (playlist.length === 0) return;
+            
+            currentIndex--;
+            if (currentIndex < 0) {
+                if (isLooping) {
+                    currentIndex = playlist.length - 1;
+                } else {
+                    currentIndex = 0;
+                }
+            }
+            
+            playVideoAt(currentIndex);
+        }
+
+        function playVideoAt(index) {
+            if (index < 0 || index >= playlist.length) return;
+            
+            currentIndex = index;
+            const video = playlist[index];
+            player.loadVideoById(video.id);
+            renderPlaylist();
+            updateStatus('กำลังเล่น: ' + video.title, true);
+        }
+
+        function toggleLoop() {
+            isLooping = document.getElementById('loop-playlist').checked;
+        }
+
+        function extractVideoId(url) {
+            const patterns = [
+                /(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([^&\s?]+)/,
+                /^([a-zA-Z0-9_-]{11})$/
+            ];
+            
+            for (const pattern of patterns) {
+                const match = url.match(pattern);
+                if (match) return match[1];
+            }
+            return null;
+        }
+
+        function openSettings() {
+            const textarea = document.getElementById('video-links');
+            textarea.value = playlist.map(v => v.url).join('\n');
+            document.getElementById('settings-modal').classList.add('show');
+        }
+
+        function closeSettings() {
+            document.getElementById('settings-modal').classList.remove('show');
+        }
+
+        function saveLinks() {
+            const textarea = document.getElementById('video-links');
+            const urls = textarea.value.split('\n').filter(url => url.trim());
+            
+            playlist = [];
+            for (const url of urls) {
+                const videoId = extractVideoId(url.trim());
+                if (videoId) {
+                    playlist.push({
+                        id: videoId,
+                        url: url.trim(),
+                        title: 'วิดีโอ ' + (playlist.length + 1),
+                        thumbnail: `https://img.youtube.com/vi/${videoId}/mqdefault.jpg`
+                    });
+                }
+            }
+            
+            savePlaylistToStorage();
+            renderPlaylist();
+            closeSettings();
+            
+            if (playlist.length > 0) {
+                currentIndex = 0;
+                playVideoAt(0);
+            }
+        }
+
+        function clearAll() {
+            document.getElementById('video-links').value = '';
+        }
+
+        function removeVideo(index) {
+            playlist.splice(index, 1);
+            if (currentIndex >= playlist.length) {
+                currentIndex = Math.max(0, playlist.length - 1);
+            }
+            if (playlist.length > 0) {
+                playVideoAt(currentIndex);
+            } else {
+                player.stopVideo();
+                updateStatus('ไม่มีวิดีโอในเพลย์ลิสต์');
+            }
+            savePlaylistToStorage();
+            renderPlaylist();
+        }
+
+        function renderPlaylist() {
+            const container = document.getElementById('playlist');
+            const count = document.getElementById('playlist-count');
+            
+            count.textContent = playlist.length;
+            
+            if (playlist.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-playlist">
+                        ยังไม่มีวิดีโอในเพลย์ลิสต์<br>
+                        คลิก "ตั้งค่าลิงก์" เพื่อเพิ่ม
+                    </div>
+                `;
+                return;
+            }
+            
+            container.innerHTML = playlist.map((video, index) => `
+                <div class="playlist-item ${index === currentIndex ? 'active' : ''}" onclick="playVideoAt(${index})">
+                    <img src="${video.thumbnail}" alt="thumbnail" onerror="this.src='https://via.placeholder.com/80x60?text=No+Image'">
+                    <div class="playlist-item-info">
+                        <div class="playlist-item-title">${video.title}</div>
+                        <div style="font-size: 11px; color: #888; margin-top: 4px;">${index + 1} / ${playlist.length}</div>
+                    </div>
+                    <button class="playlist-item-remove" onclick="event.stopPropagation(); removeVideo(${index})" title="ลบ">
+                        ✕
+                    </button>
+                </div>
+            `).join('');
+        }
+
+        function updateStatus(message, isPlaying = false) {
+            const bar = document.getElementById('status-bar');
+            bar.textContent = message;
+            bar.classList.toggle('playing', isPlaying);
+        }
+
+        function savePlaylistToStorage() {
+            localStorage.setItem('youtube_playlist', JSON.stringify(playlist));
+            localStorage.setItem('current_index', currentIndex);
+        }
+
+        function loadPlaylistFromStorage() {
+            const saved = localStorage.getItem('youtube_playlist');
+            const savedIndex = localStorage.getItem('current_index');
+            
+            if (saved) {
+                playlist = JSON.parse(saved);
+                currentIndex = parseInt(savedIndex) || 0;
+                renderPlaylist();
+                
+                if (playlist.length > 0 && currentIndex < playlist.length) {
+                    player.loadVideoById(playlist[currentIndex].id);
+                }
+            }
+        }
+
+        // ปิด modal เมื่อคลิกนอกกรอบ
+        document.getElementById('settings-modal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeSettings();
+            }
+        });
+
+        // Keyboard shortcuts
+        document.addEventListener('keydown', function(e) {
+            if (document.getElementById('settings-modal').classList.contains('show')) {
+                if (e.key === 'Escape') closeSettings();
+                return;
+            }
+            
+            if (e.key === ' ' && e.target.tagName !== 'TEXTAREA') {
+                e.preventDefault();
+                togglePlay();
+            } else if (e.key === 'ArrowRight' && e.ctrlKey) {
+                player.nextVideo();
+            } else if (e.key === 'ArrowLeft' && e.ctrlKey) {
+                player.previousVideo();
+            }
+        });
+    </script>
+</body>
+</html>
