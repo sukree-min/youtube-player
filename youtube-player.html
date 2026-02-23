@@ -301,6 +301,57 @@
             font-size: 13px;
             cursor: pointer;
         }
+        .login-status {
+            display: none;
+            align-items: center;
+            gap: 10px;
+            margin-left: auto;
+        }
+        
+        .login-status.show {
+            display: flex;
+        }
+        
+        .login-status span {
+            font-size: 13px;
+            color: #aaa;
+        }
+        
+        .btn-logout {
+            background: #666;
+            color: white;
+            padding: 6px 12px;
+            font-size: 12px;
+        }
+        
+        .btn-logout:hover {
+            background: #888;
+        }
+        
+        .login-required {
+            text-align: center;
+            padding: 30px;
+            color: #ff6b6b;
+        }
+        
+        .login-required button {
+            margin-top: 15px;
+        }
+        
+        .input-password {
+            font-family: monospace;
+        }
+        
+        .error-message {
+            color: #ff6b6b;
+            font-size: 13px;
+            margin-top: 5px;
+            display: none;
+        }
+        
+        .error-message.show {
+            display: block;
+        }
     </style>
 </head>
 <body>
@@ -325,6 +376,7 @@
                     <button class="btn btn-primary" onclick="openSettings()">
                         ⚙️ ตั้งค่าลิงก์
                     </button>
+                    <div class="login-status" id="login-status"></div>
                     <div class="loop-control">
                         <input type="checkbox" id="loop-playlist" onchange="toggleLoop()">
                         <label for="loop-playlist">🔁 เล่นวน</label>
@@ -346,6 +398,34 @@
                         คลิก "ตั้งค่าลิงก์" เพื่อเพิ่ม
                     </div>
                 </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Modal Login -->
+    <div class="modal" id="login-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>🔐 เข้าสู่ระบบ</h2>
+            </div>
+            
+            <div class="form-group">
+                <label>ชื่อผู้ใช้:</label>
+                <input type="text" id="login-username" placeholder="กรอกชื่อผู้ใช้">
+            </div>
+            
+            <div class="form-group">
+                <label>รหัสผ่าน:</label>
+                <input type="password" id="login-password" class="input-password" placeholder="กรอกรหัสผ่าน">
+            </div>
+            
+            <div class="error-message" id="login-error">
+                ❌ ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง
+            </div>
+            
+            <div class="modal-buttons">
+                <button class="btn btn-secondary" onclick="closeLogin()">ยกเลิก</button>
+                <button class="btn btn-primary" onclick="doLogin()">🔐 เข้าสู่ระบบ</button>
             </div>
         </div>
     </div>
@@ -386,6 +466,10 @@
         let isLooping = false;
         let isPlaying = true;
 
+        let isLoggedIn = false;
+        const ADMIN_USER = 'adminkch';
+        const ADMIN_PASS = '@adminKCH';
+
         // โหลด YouTube IFrame API
         const tag = document.createElement('script');
         tag.src = "https://www.youtube.com/iframe_api";
@@ -412,6 +496,7 @@
         function onPlayerReady(event) {
             updateStatus('พร้อมเล่น - กรุณาเพิ่มลิงก์วิดีโอ');
             loadPlaylistFromStorage();
+            checkLoginStatus();
         }
 
         function onPlayerStateChange(event) {
@@ -496,10 +581,69 @@
         }
 
         function openSettings() {
+            if (!isLoggedIn) {
+                openLogin();
+                return;
+            }
             const textarea = document.getElementById('video-links');
             textarea.value = playlist.map(v => v.url).join('\n');
             document.getElementById('settings-modal').classList.add('show');
         }
+
+        function openLogin() {
+            document.getElementById('login-modal').classList.add('show');
+            document.getElementById('login-username').value = '';
+            document.getElementById('login-password').value = '';
+            document.getElementById('login-error').classList.remove('show');
+            document.getElementById('login-username').focus();
+        }
+
+        function closeLogin() {
+            document.getElementById('login-modal').classList.remove('show');
+        }
+
+        function doLogin() {
+            const username = document.getElementById('login-username').value.trim();
+            const password = document.getElementById('login-password').value;
+            
+            if (username === ADMIN_USER && password === ADMIN_PASS) {
+                isLoggedIn = true;
+                sessionStorage.setItem('youtube_player_logged_in', 'true');
+                closeLogin();
+                updateLoginUI();
+                openSettings();
+            } else {
+                document.getElementById('login-error').classList.add('show');
+                document.getElementById('login-password').value = '';
+                document.getElementById('login-password').focus();
+            }
+        }
+
+        function doLogout() {
+            isLoggedIn = false;
+            sessionStorage.removeItem('youtube_player_logged_in');
+            updateLoginUI();
+        }
+
+        function checkLoginStatus() {
+            isLoggedIn = sessionStorage.getItem('youtube_player_logged_in') === 'true';
+            updateLoginUI();
+        }
+
+        function updateLoginUI() {
+            const loginStatus = document.getElementById('login-status');
+            if (isLoggedIn) {
+                loginStatus.classList.add('show');
+                loginStatus.innerHTML = `
+                    <span style="color: #4caf50;">👤 ${ADMIN_USER}</span>
+                    <button class="btn btn-logout" onclick="doLogout()">🚪 Logout</button>
+                `;
+            } else {
+                loginStatus.classList.remove('show');
+            }
+        }
+
+        // Enter key to login
 
         function closeSettings() {
             document.getElementById('settings-modal').classList.remove('show');
@@ -607,7 +751,20 @@
             }
         }
 
+        // Enter key to login
+        document.getElementById('login-password').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                doLogin();
+            }
+        });
+
         // ปิด modal เมื่อคลิกนอกกรอบ
+        document.getElementById('login-modal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeLogin();
+            }
+        });
+
         document.getElementById('settings-modal').addEventListener('click', function(e) {
             if (e.target === this) {
                 closeSettings();
@@ -616,18 +773,22 @@
 
         // Keyboard shortcuts
         document.addEventListener('keydown', function(e) {
+            if (document.getElementById('login-modal').classList.contains('show')) {
+                if (e.key === 'Escape') closeLogin();
+                return;
+            }
             if (document.getElementById('settings-modal').classList.contains('show')) {
                 if (e.key === 'Escape') closeSettings();
                 return;
             }
             
-            if (e.key === ' ' && e.target.tagName !== 'TEXTAREA') {
+            if (e.key === ' ' && e.target.tagName !== 'TEXTAREA' && e.target.tagName !== 'INPUT') {
                 e.preventDefault();
                 togglePlay();
             } else if (e.key === 'ArrowRight' && e.ctrlKey) {
-                player.nextVideo();
+                playNext();
             } else if (e.key === 'ArrowLeft' && e.ctrlKey) {
-                player.previousVideo();
+                playPrevious();
             }
         });
     </script>
